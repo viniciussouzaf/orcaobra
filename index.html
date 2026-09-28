@@ -1,135 +1,320 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ORÇAOBRA</title>
-
-    <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORÇAOBRA</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
+<div id="app">
 
-    <div id="app">
+<header class="topbar">
+<div>
+<h1>ORÇAOBRA</h1>
+<span>Sistema de Orçamentos e Custos</span>
+</div>
+<button id="menuButton">☰</button>
+</header>
 
-        <header class="topbar">
-            <div>
-                <h1>ORÇAOBRA</h1>
-                <span>Sistema de Orçamentos e Custos</span>
-            </div>
+<!-- ===================== TELA INICIAL ===================== -->
+<main id="homeView">
 
-            <button id="menuButton">☰</button>
-        </header>
+<section class="welcome">
+<h2>Olá, Fernando! 👋</h2>
+<p>Vamos preparar seu próximo orçamento.</p>
+</section>
 
-        <main>
+<section class="quick-actions">
+<button class="action primary" id="btnNovoOrcamento">
+<strong>＋</strong>
+<span>Novo Orçamento</span>
+</button>
+<button class="action" id="btnClientes">
+<strong>👥</strong>
+<span>Clientes</span>
+</button>
+<button class="action" id="btnMateriais">
+<strong>🧱</strong>
+<span>Materiais</span>
+</button>
+<button class="action" id="btnServicos">
+<strong>🛠️</strong>
+<span>Serviços</span>
+</button>
+</section>
 
-            <section class="welcome">
-                <h2>Olá, Fernando! 👋</h2>
-                <p>Vamos preparar seu próximo orçamento.</p>
-            </section>
+<section class="dashboard">
+<div class="card">
+<span>Orçamentos</span>
+<strong id="statOrcamentos">0</strong>
+</div>
+<div class="card">
+<span>Obras em andamento</span>
+<strong id="statObras">0</strong>
+</div>
+<div class="card">
+<span>Valor orçado</span>
+<strong id="statValorOrcado">R$ 0,00</strong>
+</div>
+<div class="card">
+<span>Lucro previsto</span>
+<strong id="statLucroPrevisto">R$ 0,00</strong>
+</div>
+</section>
 
-            <section class="quick-actions">
+<section class="section">
+<div class="section-header">
+<h2>Últimos orçamentos</h2>
+<button>Ver todos</button>
+</div>
+<div id="listaOrcamentos">
+<div class="empty" id="orcamentosEmpty">
+<div class="empty-icon">📋</div>
+<h3>Nenhum orçamento ainda</h3>
+<p>Crie seu primeiro orçamento para começar.</p>
+</div>
+</div>
+</section>
 
-                <button class="action primary">
-                    <strong>＋</strong>
-                    <span>Novo Orçamento</span>
-                </button>
+</main>
 
-                <button class="action">
-                    <strong>👥</strong>
-                    <span>Clientes</span>
-                </button>
+<!-- ===================== TELA NOVO ORÇAMENTO (WIZARD) ===================== -->
+<main id="orcamentoView" class="hidden">
 
-                <button class="action">
-                    <strong>🧱</strong>
-                    <span>Materiais</span>
-                </button>
+<section class="form-header">
+<button id="btnVoltarHome" class="link-btn">← Sair</button>
+<h2>Novo Orçamento</h2>
+</section>
 
-                <button class="action">
-                    <strong>🛠️</strong>
-                    <span>Serviços</span>
-                </button>
+<div class="wizard-progress">
+<div class="wizard-progress-bar"><div id="wizardProgressFill"></div></div>
+<span id="wizardStepLabel">Passo 1 de 8</span>
+</div>
 
-            </section>
+<!-- PASSO 1: OBRA -->
+<section class="section wizard-step" data-step="1">
+<h3 class="section-title">1. A obra</h3>
+<div class="form-grid">
+<label>Cliente
+<input type="text" id="campoCliente" placeholder="Nome do cliente">
+</label>
+<label>Nome da obra
+<input type="text" id="campoNomeObra" placeholder="Ex: Reforma apartamento 302">
+</label>
+<label>Endereço
+<input type="text" id="campoEndereco" placeholder="Endereço da obra">
+</label>
+<label class="full">O que você vai fazer?
+<textarea id="campoDescricao" rows="2" placeholder="Ex: reboco e assentamento de piso na sala e cozinha"></textarea>
+</label>
+<label>Prazo estimado (dias)
+<input type="number" id="campoPrazoDias" min="0" value="1">
+</label>
+<label>Data do orçamento
+<input type="date" id="campoData">
+</label>
+<label>Validade da proposta (dias)
+<input type="number" id="campoValidade" placeholder="15" min="0">
+</label>
+</div>
+</section>
 
-            <section class="dashboard">
+<!-- PASSO 2: SERVIÇOS -->
+<section class="section wizard-step" data-step="2">
+<h3 class="section-title">2. Serviços e medidas</h3>
+<p class="ajuda">Liste os serviços que compõem essa obra.</p>
+<div class="table-wrap">
+<table id="tabelaServicos">
+<thead><tr><th>Serviço</th><th>Unidade</th><th>Quantidade</th><th></th></tr></thead>
+<tbody id="corpoServicos"></tbody>
+</table>
+</div>
+<button id="btnAddServico" class="secondary-btn">+ Adicionar serviço</button>
+</section>
 
-                <div class="card">
-                    <span>Orçamentos</span>
-                    <strong>0</strong>
-                </div>
+<!-- PASSO 3: MATERIAIS -->
+<section class="section wizard-step" data-step="3">
+<h3 class="section-title">3. Materiais</h3>
+<p class="ajuda">Como será o fornecimento dos materiais?</p>
+<div class="radio-group" id="grupoMaterialFornecimento">
+<label><input type="radio" name="materialFornecimento" value="cliente"> Cliente fornece todos os materiais</label>
+<label><input type="radio" name="materialFornecimento" value="fernando" checked> Eu forneço todos os materiais</label>
+<label><input type="radio" name="materialFornecimento" value="dividido"> Cliente e eu dividimos os materiais</label>
+<label><input type="radio" name="materialFornecimento" value="depende"> Depende do serviço</label>
+</div>
+<div class="form-grid" id="blocoMateriaisValor">
+<label>Estimativa de gasto com materiais — sua parte (R$)
+<input type="number" id="campoMateriaisValor" min="0" value="0">
+</label>
+<label>Perda/desperdício estimado (%)
+<input type="number" id="campoMateriaisPerda" min="0" value="0">
+</label>
+</div>
+</section>
 
-                <div class="card">
-                    <span>Obras em andamento</span>
-                    <strong>0</strong>
-                </div>
+<!-- PASSO 4: VOCÊ (FERNANDO) -->
+<section class="section wizard-step" data-step="4">
+<h3 class="section-title">4. Seu trabalho</h3>
+<p class="ajuda">Como você quer considerar o valor do seu próprio trabalho nessa obra?</p>
+<div class="radio-group" id="grupoModoRemuneracao">
+<label><input type="radio" name="modoRemuneracao" value="diaria" checked> Diária</label>
+<label><input type="radio" name="modoRemuneracao" value="hora"> Por hora</label>
+<label><input type="radio" name="modoRemuneracao" value="empreitada"> Empreitada (valor fechado)</label>
+<label><input type="radio" name="modoRemuneracao" value="fixo"> Valor fixo</label>
+</div>
+<div class="form-grid">
+<label id="labelValorRemuneracao">Valor da diária (R$)
+<input type="number" id="campoValorRemuneracao" min="0" value="0">
+</label>
+<label id="labelQtdRemuneracao">Quantos dias você vai trabalhar?
+<input type="number" id="campoQtdRemuneracao" min="0" value="1">
+</label>
+</div>
+</section>
 
-                <div class="card">
-                    <span>Valor orçado</span>
-                    <strong>R$ 0,00</strong>
-                </div>
+<!-- PASSO 5: EQUIPE -->
+<section class="section wizard-step" data-step="5">
+<h3 class="section-title">5. Equipe</h3>
+<p class="ajuda">Ajudantes</p>
+<div class="table-wrap">
+<table id="tabelaAjudantes">
+<thead><tr><th>Nome</th><th>Diária (R$)</th><th>Dias</th><th>Custo</th><th></th></tr></thead>
+<tbody id="corpoAjudantes"></tbody>
+</table>
+</div>
+<button id="btnAddAjudante" class="secondary-btn">+ Adicionar ajudante</button>
 
-                <div class="card">
-                    <span>Lucro previsto</span>
-                    <strong>R$ 0,00</strong>
-                </div>
+<p class="ajuda" style="margin-top:18px">Outros profissionais (eletricista, encanador, pintor, etc.)</p>
+<div class="table-wrap">
+<table id="tabelaProfissionais">
+<thead><tr><th>Função</th><th>Valor combinado (R$)</th><th></th></tr></thead>
+<tbody id="corpoProfissionais"></tbody>
+</table>
+</div>
+<button id="btnAddProfissional" class="secondary-btn">+ Adicionar profissional</button>
+</section>
 
-            </section>
+<!-- PASSO 6: EQUIPAMENTOS -->
+<section class="section wizard-step" data-step="6">
+<h3 class="section-title">6. Equipamentos e ferramentas</h3>
+<p class="ajuda">Para cada item, diga de quem é e quanto isso custa para essa obra (aluguel, combustível, desgaste). Se for seu e não quiser cobrar nada por ele, deixe o custo em R$ 0.</p>
+<div class="table-wrap">
+<table id="tabelaEquipamentos">
+<thead><tr><th>Item</th><th>De quem é</th><th>Custo (R$)</th><th></th></tr></thead>
+<tbody id="corpoEquipamentos"></tbody>
+</table>
+</div>
+<button id="btnAddEquipamento" class="secondary-btn">+ Adicionar equipamento/ferramenta</button>
+</section>
 
-            <section class="section">
+<!-- PASSO 7: TRANSPORTE E OUTROS GASTOS -->
+<section class="section wizard-step" data-step="7">
+<h3 class="section-title">7. Transporte e outros gastos</h3>
 
-                <div class="section-header">
-                    <h2>Últimos orçamentos</h2>
+<div class="gasto-bloco">
+<p class="ajuda">Transporte — quem paga?</p>
+<div class="radio-group" id="grupoTransporte">
+<label><input type="radio" name="transportePaga" value="cliente"> Cliente</label>
+<label><input type="radio" name="transportePaga" value="fernando" checked> Eu (Fernando)</label>
+<label><input type="radio" name="transportePaga" value="terceiro"> Terceiro/frete contratado</label>
+</div>
+<label>Custo estimado (R$)
+<input type="number" id="campoTransporteValor" min="0" value="0">
+</label>
+</div>
 
-                    <button>Ver todos</button>
-                </div>
+<div class="gasto-bloco">
+<p class="ajuda">Alimentação da equipe — quem paga?</p>
+<div class="radio-group" id="grupoAlimentacao">
+<label><input type="radio" name="alimentacaoPaga" value="nao" checked> Não haverá custo</label>
+<label><input type="radio" name="alimentacaoPaga" value="fernando"> Eu (Fernando)</label>
+<label><input type="radio" name="alimentacaoPaga" value="cliente"> Cliente</label>
+<label><input type="radio" name="alimentacaoPaga" value="cada"> Cada trabalhador paga o seu</label>
+</div>
+<label>Custo estimado (R$)
+<input type="number" id="campoAlimentacaoValor" min="0" value="0">
+</label>
+</div>
 
-                <div class="empty">
+<div class="gasto-bloco">
+<p class="ajuda">Hospedagem — será necessária?</p>
+<div class="radio-group" id="grupoHospedagem">
+<label><input type="radio" name="hospedagemPaga" value="nao" checked> Não</label>
+<label><input type="radio" name="hospedagemPaga" value="fernando"> Sim, eu pago</label>
+<label><input type="radio" name="hospedagemPaga" value="cliente"> Sim, cliente paga</label>
+</div>
+<label>Custo estimado (R$)
+<input type="number" id="campoHospedagemValor" min="0" value="0">
+</label>
+</div>
 
-                    <div class="empty-icon">
-                        📋
-                    </div>
+<p class="ajuda" style="margin-top:10px">Outros gastos (entulho, frete, EPI, taxas, etc.)</p>
+<div class="table-wrap">
+<table id="tabelaOutrosGastos">
+<thead><tr><th>Descrição</th><th>Valor (R$)</th><th></th></tr></thead>
+<tbody id="corpoOutrosGastos"></tbody>
+</table>
+</div>
+<button id="btnAddOutroGasto" class="secondary-btn">+ Adicionar gasto</button>
+</section>
 
-                    <h3>Nenhum orçamento ainda</h3>
+<!-- PASSO 8: PREÇO E RESULTADO -->
+<section class="section wizard-step" data-step="8">
+<h3 class="section-title">8. Preço e resultado</h3>
+<div class="form-grid">
+<label>Quanto você pretende cobrar do cliente? (R$)
+<input type="number" id="campoPrecoCobrado" min="0" value="0">
+</label>
+</div>
 
-                    <p>
-                        Crie seu primeiro orçamento para começar.
-                    </p>
+<div id="radarPrejuizo" class="radar hidden"></div>
 
-                </div>
+<div class="resumo">
+<div class="resumo-linha"><span>Materiais (sua parte)</span><strong id="resMateriais">R$ 0,00</strong></div>
+<div class="resumo-linha"><span>Equipe e terceiros</span><strong id="resEquipe">R$ 0,00</strong></div>
+<div class="resumo-linha"><span>Equipamentos e ferramentas</span><strong id="resEquipamentos">R$ 0,00</strong></div>
+<div class="resumo-linha"><span>Transporte e outros gastos</span><strong id="resOutros">R$ 0,00</strong></div>
+<div class="resumo-linha"><span>Custo operacional</span><strong id="resCustoOperacional">R$ 0,00</strong></div>
+<div class="resumo-linha destaque"><span>Remuneração do Fernando</span><strong id="resRemuneracao">R$ 0,00</strong></div>
+<div class="resumo-linha"><span>Custo total</span><strong id="resCustoTotal">R$ 0,00</strong></div>
+<div class="resumo-linha"><span>Valor mínimo recomendado</span><strong id="resValorMinimo">R$ 0,00</strong></div>
+<div class="resumo-linha destaque"><span>Lucro do negócio</span><strong id="resLucro">R$ 0,00</strong></div>
+<div class="resumo-linha"><span>Margem</span><strong id="resMargem">0%</strong></div>
+<div class="resumo-linha"><span>Lucro por dia</span><strong id="resLucroDia">R$ 0,00</strong></div>
+</div>
 
-            </section>
+<div id="indicadorResultado" class="indicador"></div>
+</section>
 
-        </main>
+<section class="form-actions">
+<button id="btnVoltarPasso" class="secondary-btn">← Anterior</button>
+<button id="btnAvancarPasso" class="primary-btn">Próximo →</button>
+<button id="btnSalvarOrcamento" class="primary-btn hidden">Salvar orçamento</button>
+</section>
 
-        <nav class="bottom-nav">
+</main>
 
-            <button class="active">
-                <span>⌂</span>
-                <small>Início</small>
-            </button>
+<nav class="bottom-nav">
+<button class="active" id="navInicio">
+<span>⌂</span>
+<small>Início</small>
+</button>
+<button id="navOrcamentos">
+<span>📄</span>
+<small>Orçamentos</small>
+</button>
+<button id="navObras">
+<span>🏗️</span>
+<small>Obras</small>
+</button>
+<button id="navMais">
+<span>⚙️</span>
+<small>Mais</small>
+</button>
+</nav>
 
-            <button>
-                <span>📄</span>
-                <small>Orçamentos</small>
-            </button>
-
-            <button>
-                <span>🏗️</span>
-                <small>Obras</small>
-            </button>
-
-            <button>
-                <span>⚙️</span>
-                <small>Mais</small>
-            </button>
-
-        </nav>
-
-    </div>
-
-    <script src="js/app.js"></script>
-
+</div>
+<script src="js/app.js"></script>
 </body>
 </html>
