@@ -82,8 +82,8 @@ const CAD={
  materiais:{t:'Materiais',s:'material',ico:'🧱',f:[['nome','Nome do material','text',1],['categoria','Categoria','sel',0,['Cimento','Areia','Brita','Tijolos','Blocos','Argamassa','Revestimentos','Pisos','Tintas','Tubos','Conexões','Elétrica','Hidráulica','Ferragens','Madeira','Metais','Louças','Acabamento','Outros']],['marca','Marca','text'],['unidade','Unidade','sel',1,UN],['preco','Preço atual (R$)','num'],['fornecedor','Fornecedor','text'],['codSinapi','Código SINAPI (referência)','text'],['refSinapi','Preço de referência SINAPI (R$)','num'],['obs','Observações','area']],sub:x=>[x.categoria,x.unidade,x.fornecedor].filter(Boolean).join(' · '),rt:x=>x.preco?money(x.preco):'sem preço'},
  servicos:{t:'Serviços',s:'serviço',ico:'🛠️',f:[['nome','Nome do serviço','text',1],['categoria','Categoria','text'],['unidade','Unidade de cobrança','sel',1,UN],['preco','Meu preço de venda por unidade (R$)','num'],['obs','Composição / observações (ex.: cimento, areia, pedreiro + ajudante, betoneira)','area']],sub:x=>[x.categoria,'por '+(x.unidade||'un')].filter(Boolean).join(' · '),rt:x=>x.preco?money(x.preco):'—'},
  equipe:{t:'Mão de obra / Equipe',s:'profissional',ico:'👷',f:[['nome','Nome','text',1],['funcao','Função','sel',1,['Ajudante','Servente','Pedreiro','Azulejista','Pintor','Eletricista','Encanador','Gesseiro','Carpinteiro','Armador','Outro']],['tel','Telefone','tel'],['diaria','Valor da diária (R$)','num'],['hora','Valor da hora (R$)','num'],['empreitada','Valor por empreitada (R$)','num'],['obs','Observações','area']],sub:x=>[x.funcao,x.tel].filter(Boolean).join(' · '),rt:x=>x.diaria?money(x.diaria)+'/dia':'—'},
- equipamentos:{t:'Equipamentos',s:'equipamento',ico:'⚙️',f:[['nome','Nome','text',1],['categoria','Categoria','sel',0,['Betoneira','Andaime','Compactador','Gerador','Compressor','Máquina de corte','Equipamento de pintura','Outros']],['marca','Marca / modelo','text'],['posse','Próprio ou alugado?','sel',1,['Próprio','Alugado']],['preco','Custo por dia (R$) — aluguel ou desgaste','num'],['fornecedor','Locadora / fornecedor','text'],['obs','Observações','area']],sub:x=>[x.posse,x.categoria,x.fornecedor].filter(Boolean).join(' · '),rt:x=>x.preco?money(x.preco)+'/dia':'—'},
- ferramentas:{t:'Ferramentas',s:'ferramenta',ico:'🔨',f:[['nome','Nome','text',1],['categoria','Categoria','text'],['posse','Própria ou alugada?','sel',1,['Própria','Alugada']],['preco','Custo por dia (R$)','num'],['fornecedor','Fornecedor','text'],['obs','Observações','area']],sub:x=>[x.posse,x.categoria].filter(Boolean).join(' · '),rt:x=>x.preco?money(x.preco)+'/dia':'—'},
+ equipamentos:{t:'Equipamentos',s:'equipamento',ico:'⚙️',f:[['nome','Nome','text',1],['categoria','Categoria','sel',0,['Betoneira','Andaime','Compactador','Gerador','Compressor','Máquina de corte','Equipamento de pintura','Outros']],['marca','Marca / modelo','text'],['posse','Próprio ou alugado?','sel',1,['Próprio','Alugado']],['preco','Custo por dia (R$) — aluguel ou desgaste','num'],['fornecedor','Locadora / fornecedor','text'],['codSinapi','Código SINAPI (referência)','text'],['obs','Observações','area']],sub:x=>[x.posse,x.categoria,x.fornecedor].filter(Boolean).join(' · '),rt:x=>x.preco?money(x.preco)+'/dia':'—'},
+ ferramentas:{t:'Ferramentas',s:'ferramenta',ico:'🔨',f:[['nome','Nome','text',1],['categoria','Categoria','text'],['posse','Própria ou alugada?','sel',1,['Própria','Alugada']],['preco','Custo por dia (R$)','num'],['fornecedor','Fornecedor','text'],['codSinapi','Código SINAPI (referência)','text'],['obs','Observações','area']],sub:x=>[x.posse,x.categoria].filter(Boolean).join(' · '),rt:x=>x.preco?money(x.preco)+'/dia':'—'},
  fornecedores:{t:'Fornecedores',s:'fornecedor',ico:'🏪',f:[['nome','Nome / Razão social','text',1],['docto','CNPJ','text'],['tel','Telefone / WhatsApp','tel'],['email','E-mail','email'],['cidade','Cidade','text'],['cats','Categorias fornecidas','text'],['obs','Observações','area']],sub:x=>[x.tel,x.cidade].filter(Boolean).join(' · ')||'sem contato',rt:()=>''},
  veiculos:{t:'Transporte / Veículos',s:'veículo',ico:'🚚',f:[['nome','Veículo','text',1],['tipo','Tipo','sel',0,['Carro','Moto','Caminhonete','Caminhão','Outro']],['comb','Combustível','sel',0,['Gasolina','Etanol','Diesel','Flex','Elétrico']],['custoKm','Custo estimado por km (R$)','num'],['cap','Capacidade','text'],['obs','Observações','area']],sub:x=>[x.tipo,x.comb].filter(Boolean).join(' · '),rt:x=>x.custoKm?money(x.custoKm)+'/km':'—'}
 };
@@ -139,12 +139,22 @@ function fieldHtml([key,label,type,req,opts],val=''){
 }
 function formCad(key,id){
   const c=CAD[key];const editing=!!id;const item=editing?db[key].find(x=>x.id===id):{};TITLE=(editing?'Editar ':'Novo ')+c.s;
-  $('#main').innerHTML=`<div class="card">
+  const temSinapi=c.f.some(fd=>fd[0]==='codSinapi');
+  $('#main').innerHTML=`
+    ${temSinapi?`<div class="card"><button class="btn ghost block" id="_sinapiBtn">🔎 Buscar no SINAPI (preenche nome, unidade e código)</button></div>`:''}
+    <div class="card">
     ${c.f.map(fd=>fieldHtml(fd,item[fd[0]]||'')).join('')}
+    ${temSinapi&&item.codSinapi?`<p class="sub" style="margin:-4px 0 10px">Código ${esc(item.codSinapi)} — <a href="${sinapiLink(item.codSinapi,item.nome)}" target="_blank" rel="noopener">ver preço atualizado no Buscador SINAPI ↗</a></p>`:''}
     <div class="btns">
       <button class="btn block" id="_save">${editing?'Salvar alterações':'Cadastrar'}</button>
       ${editing?`<button class="btn red block" id="_del">Excluir</button>`:''}
     </div></div>`;
+  if(temSinapi)$('#_sinapiBtn').onclick=()=>openSinapiSearch(r=>{
+    const setv=(k,v)=>{const el=$(`#main [data-k="${k}"]`);if(el)el.value=v;};
+    setv('nome',r.description);setv('codSinapi',r.code);
+    const u=sinapiUnit(r.unit);if(u)setv('unidade',u);
+    toast('Preenchido a partir do SINAPI — confira o preço no link após salvar.');
+  });
   $('#_save').onclick=()=>{
     const o=editing?item:{id:uid()};
     $('#main').querySelectorAll('[data-k]').forEach(el=>{o[el.dataset.k]=el.type==='number'?(+el.value||0):el.value.trim();});
@@ -179,6 +189,46 @@ function quickNew(key,cb){
     if(!o.nome){toast('Preencha o nome.');return;}
     db[key].push(o);save();cb(o);closeSheet();toast('Cadastrado!');
   };
+}
+
+/* ============ BUSCA SINAPI (catálogo oficial CEF/IBGE, via api pública sinpres) ============ */
+const SINAPI_UNIT_MAP={KG:'kg',M:'m','M2':'m²','M²':'m²','M3':'m³','M³':'m³',UN:'un',UNID:'un',H:'hora',HORA:'hora',SC:'saco',SACO:'saco',L:'lata',LATA:'lata',BARRA:'barra',ROLO:'rolo',MILHEIRO:'milheiro',PONTO:'ponto'};
+function sinapiUnit(u){return SINAPI_UNIT_MAP[String(u||'').toUpperCase()]||'';}
+async function sinapiFetch(q){
+  const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),7000);
+  try{
+    const r=await fetch('https://api.sinpres.com.br/api/v1/sectors/civil-construction/items?search='+encodeURIComponent(q)+'&limit=15',{signal:ctrl.signal});
+    clearTimeout(t);if(!r.ok)throw new Error('http '+r.status);
+    const j=await r.json();return j.data||[];
+  }catch(e){clearTimeout(t);throw e;}
+}
+function openSinapiSearch(cb){
+  openSheet(`<h2>🔎 Buscar no SINAPI</h2>
+    <p class="sub">Catálogo oficial (Caixa/IBGE) de materiais, equipamentos e mão de obra. Preenche nome, unidade e código — o preço de hoje no seu estado você confere com um clique no Buscador SINAPI.</p>
+    <input class="in" id="_sq" placeholder="Nome ou código (ex: cimento, betoneira, 3410)" style="margin:10px 0">
+    <div id="_sres"><p class="sub">Digite ao menos 3 letras…</p></div>`);
+  let timer;
+  $('#_sq').oninput=e=>{
+    clearTimeout(timer);const q=e.target.value.trim();
+    if(q.length<3){$('#_sres').innerHTML='<p class="sub">Digite ao menos 3 letras…</p>';return;}
+    $('#_sres').innerHTML='<p class="sub">Buscando…</p>';
+    timer=setTimeout(async()=>{
+      try{
+        const items=await sinapiFetch(q);
+        if(!items.length){$('#_sres').innerHTML='<p class="sub">Nada encontrado. Tente outro termo, ou busque direto no <a href="https://buscadorsinapi.com.br/insumos" target="_blank" rel="noopener">Buscador SINAPI ↗</a>.</p>';return;}
+        $('#_sres').innerHTML=items.map(it=>`<button class="li" data-code="${it.code}" data-desc="${esc(it.description)}" data-unit="${esc(it.unit||'')}">
+          <div class="ic">🧱</div><div class="tx"><b>${esc(it.description)}</b><span>Código ${it.code} · ${esc(it.unit||'—')}</span></div></button>`).join('');
+        $('#_sres').querySelectorAll('[data-code]').forEach(b=>b.onclick=()=>{
+          cb({code:b.dataset.code,description:b.dataset.desc,unit:b.dataset.unit});closeSheet();
+        });
+      }catch(err){
+        $('#_sres').innerHTML=`<p class="sub">Não consegui buscar agora (sem conexão com o serviço). Busque direto no <a href="https://buscadorsinapi.com.br/insumos" target="_blank" rel="noopener">Buscador SINAPI ↗</a> e digite o preço manualmente.</p>`;
+      }
+    },450);
+  };
+}
+function sinapiLink(codigo,nome){
+  return `https://buscadorsinapi.com.br/insumos?busca=${encodeURIComponent(codigo||nome||'')}`;
 }
 
 /* ============ HOME ============ */
@@ -374,6 +424,7 @@ function itemRow(i,fields){ // fields: [[key,type,width]]
       <option value="terceiro" ${i.payer==='terceiro'?'selected':''}>Terceiro</option></select></td>`;
     return '';
   }).join('')}<td data-total="${i.id}">${money(rowTotal(i))}</td>
+  <td>${i.codSinapi?`<a href="${sinapiLink(i.codSinapi,i.nome)}" target="_blank" rel="noopener" title="Ver preço no SINAPI">🔗</a>`:''}</td>
   <td><button class="x" onclick="rmItem('${i.id}')">✕</button></td></tr>`;
 }
 function bindTables(){
@@ -425,9 +476,10 @@ function wstepHtml(s){
       `<span class="chip ${WZ.matMode===v?'on':''}" onclick="WZ.matMode='${v}';renderWizard()">${l}</span>`).join('')}</div>
     ${WZ.matMode!=='cliente'?`
     <div class="f" style="margin-top:10px"><label>Perda / desperdício estimado (%)</label><input class="in" type="number" min="0" value="${WZ.perdas}" oninput="WZ.perdas=+this.value||0" style="max-width:120px"></div>
-    <div class="table-wrap"><table class="tbl"><thead><tr><th>Material</th><th>Qtd</th><th>Preço un.</th>${WZ.matMode!=='eu'?'<th>Paga</th>':''}<th></th><th></th></tr></thead>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Material</th><th>Qtd</th><th>Preço un.</th>${WZ.matMode!=='eu'?'<th>Paga</th>':''}<th></th><th></th><th></th></tr></thead>
     <tbody data-arr="itens">${mats.map(i=>itemRow(i,[['nome','txt',140],['qtd','num',55],['valor','num',80],...(WZ.matMode!=='eu'?[['payer','payer',85]]:[])])).join('')}</tbody></table></div>
-    <button class="btn ghost" id="_addmat">+ Buscar material</button>`:'<p class="sub" style="margin-top:8px">Sem materiais por sua conta nesse orçamento.</p>'}
+    <button class="btn ghost" id="_addmat">+ Buscar no meu cadastro</button>
+    <button class="btn ghost" id="_addmatSinapi">🔎 Buscar no SINAPI</button>`:'<p class="sub" style="margin-top:8px">Sem materiais por sua conta nesse orçamento.</p>'}
   </div>`;
   }
 
@@ -464,9 +516,10 @@ function wstepHtml(s){
     const eq=WZ.itens.filter(i=>i.cat==='equipamento'||i.cat==='ferramenta');
     return `<div class="card"><h3>6. Equipamentos e ferramentas</h3>
     <p class="sub">De quem é, e quanto custa pra essa obra (aluguel/desgaste). R$ 0 se não quiser cobrar.</p>
-    <div class="table-wrap"><table class="tbl"><thead><tr><th>Item</th><th>Paga</th><th>Custo/dia</th><th>Dias</th><th></th><th></th></tr></thead>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Item</th><th>Paga</th><th>Custo/dia</th><th>Dias</th><th></th><th></th><th></th></tr></thead>
     <tbody data-arr="itens">${eq.map(i=>itemRow(i,[['nome','txt',120],['payer','payer',80],['valor','num',75],['dias','num',50]])).join('')}</tbody></table></div>
-    <div class="btns"><button class="btn ghost" id="_addeq">+ Equipamento</button><button class="btn ghost" id="_addfe">+ Ferramenta</button></div>
+    <div class="btns"><button class="btn ghost" id="_addeq">+ Equipamento (cadastro)</button><button class="btn ghost" id="_addfe">+ Ferramenta (cadastro)</button></div>
+    <div class="btns" style="margin-top:6px"><button class="btn ghost" id="_addeqSinapi">🔎 Equipamento no SINAPI</button><button class="btn ghost" id="_addfeSinapi">🔎 Ferramenta no SINAPI</button></div>
   </div>`;
   }
 
@@ -493,12 +546,17 @@ function wstepHtml(s){
     const rows=Object.keys(GROUPS).filter(k=>k!=='fernando'&&c.G[k]).map(k=>`<div class="kv"><span>${GROUPS[k]}</span><span>${money(c.G[k])}</span></div>`).join('');
     return `<div class="card"><h3>8. Preço e resultado</h3>
     <div class="grid2">
-      <div class="f"><label>Quanto vai cobrar do cliente? (R$)</label><input class="in" type="number" min="0" value="${WZ.preco}" oninput="WZ.preco=+this.value||0;renderWizard()"></div>
-      <div class="f"><label>Margem desejada, se quiser sugestão (%)</label><input class="in" type="number" min="0" value="${WZ.margemDes}" oninput="WZ.margemDes=+this.value||0;renderWizard()"></div>
+      <div class="f"><label>Quanto vai cobrar do cliente? (R$)</label><input class="in" type="number" min="0" id="_finPreco" value="${WZ.preco}"></div>
+      <div class="f"><label>Margem desejada, se quiser sugestão (%)</label><input class="in" type="number" min="0" id="_finMargem" value="${WZ.margemDes}"></div>
     </div>
-    <button class="btn ghost" onclick="WZ.preco=Math.round(calc(WZ).sugerido*100)/100;renderWizard()">Usar preço sugerido (${money(c.sugerido)})</button>
+    <button class="btn ghost" id="_finUsarSug">Usar preço sugerido (${money(c.sugerido)})</button>
+    <div class="btns" style="margin-top:10px"><button class="btn ghost" onclick="imprimirRascunho()">🖨️ Pré-visualizar / imprimir</button></div>
     </div>
-    <div class="card">${rows}
+    <div id="s8dyn">${step8Dyn(c,r,rows)}</div>`;
+  }
+}
+function step8Dyn(c,r,rows){
+  return `<div class="card">${rows}
       <div class="kv"><span>Custo operacional</span><span>${money(c.oper)}</span></div>
       <div class="kv big"><span>Remuneração do seu trabalho</span><span>${money(c.G.fernando)}</span></div>
       <div class="kv"><span>Custo total</span><span>${money(c.total)}</span></div>
@@ -509,18 +567,43 @@ function wstepHtml(s){
       <div class="kv big" style="color:var(--brand)"><span>No seu bolso (trabalho + lucro)</span><span>${money(c.bolso)}</span></div>
     </div>
     ${r.L.map(x=>`<div class="radar ${x.n}">${x.n==='ok'?'🟢':x.n==='warn'?'🟡':'🔴'} <span>${esc(x.t)}</span></div>`).join('')}`;
-  }
+}
+function refreshStep8(){
+  const c=calc(WZ),r=radar(WZ,c);
+  const rows=Object.keys(GROUPS).filter(k=>k!=='fernando'&&c.G[k]).map(k=>`<div class="kv"><span>${GROUPS[k]}</span><span>${money(c.G[k])}</span></div>`).join('');
+  const dyn=$('#s8dyn');if(dyn)dyn.innerHTML=step8Dyn(c,r,rows);
+  const bn=$('#bar .bn');if(bn)bn.innerHTML=`<span>Lucro previsto<b>${money(c.lucro)}</b></span><span style="text-align:right">Margem<b>${pct(c.margem)}</b></span>`;
+}
+function imprimirRascunho(){
+  const idx=db.orcamentos.findIndex(o=>o.id===WZ.id);
+  if(idx>-1)db.orcamentos[idx]=JSON.parse(JSON.stringify(WZ));else db.orcamentos.push(JSON.parse(JSON.stringify(WZ)));
+  save();
+  const wasHiddenNav=$('#nav').style.display,wasHiddenBar=$('#bar').hidden;
+  go('orcamento',WZ.id);
+  setTimeout(()=>{window.print();},250);
 }
 
 function wireStep(s){
   bindTables();
   if(s===1)$('#_pickcli').onclick=()=>pickerSheet('clientes',c=>{WZ.clienteId=c.id;renderWizard();});
   if(s===2)$('#_addserv').onclick=()=>pickerSheet('servicos',x=>{WZ.servicos.push({id:uid(),nome:x.nome,unidade:x.unidade,qtd:1,preco:x.preco||0});renderWizard();});
-  if(s===3&&$('#_addmat'))$('#_addmat').onclick=()=>pickerSheet('materiais',x=>{addItem('material',{nome:x.nome,ref:x.id,valor:x.preco||0,qtd:1,payer:WZ.matMode==='cliente'?'cliente':'eu'});renderWizard();});
+  if(s===3&&$('#_addmat'))$('#_addmat').onclick=()=>pickerSheet('materiais',x=>{addItem('material',{nome:x.nome,ref:x.id,valor:x.preco||0,qtd:1,payer:WZ.matMode==='cliente'?'cliente':'eu',codSinapi:x.codSinapi||''});renderWizard();});
+  if(s===3&&$('#_addmatSinapi'))$('#_addmatSinapi').onclick=()=>openSinapiSearch(r=>{
+    addItem('material',{nome:r.description,valor:0,qtd:1,payer:WZ.matMode==='cliente'?'cliente':'eu',codSinapi:r.code});
+    renderWizard();toast('Item adicionado — confira o preço no ícone 🔗 ao lado dele.');
+  });
   if(s===5){$('#_addaj').onclick=()=>pickerSheet('equipe',x=>{addItem('ajudante',{nome:x.nome,ref:x.id,valor:x.diaria||0,qtd:1,dias:1,payer:'eu'});renderWizard();});
     $('#_addpr').onclick=()=>pickerSheet('equipe',x=>{addItem('profissional',{nome:x.funcao?x.funcao+' — '+x.nome:x.nome,ref:x.id,valor:x.empreitada||x.diaria||0,qtd:1,dias:1,payer:'eu'});renderWizard();});}
-  if(s===6){$('#_addeq').onclick=()=>pickerSheet('equipamentos',x=>{addItem('equipamento',{nome:x.nome,ref:x.id,valor:x.preco||0,qtd:1,dias:1,payer:x.posse==='Próprio'?'eu':'eu'});renderWizard();});
-    $('#_addfe').onclick=()=>pickerSheet('ferramentas',x=>{addItem('ferramenta',{nome:x.nome,ref:x.id,valor:x.preco||0,qtd:1,dias:1,payer:'eu'});renderWizard();});}
+  if(s===6){$('#_addeq').onclick=()=>pickerSheet('equipamentos',x=>{addItem('equipamento',{nome:x.nome,ref:x.id,valor:x.preco||0,qtd:1,dias:1,payer:'eu',codSinapi:x.codSinapi||''});renderWizard();});
+    $('#_addfe').onclick=()=>pickerSheet('ferramentas',x=>{addItem('ferramenta',{nome:x.nome,ref:x.id,valor:x.preco||0,qtd:1,dias:1,payer:'eu',codSinapi:x.codSinapi||''});renderWizard();});
+    $('#_addeqSinapi').onclick=()=>openSinapiSearch(r=>{addItem('equipamento',{nome:r.description,valor:0,qtd:1,dias:1,payer:'eu',codSinapi:r.code});renderWizard();toast('Item adicionado — confira o preço no ícone 🔗 ao lado dele.');});
+    $('#_addfeSinapi').onclick=()=>openSinapiSearch(r=>{addItem('ferramenta',{nome:r.description,valor:0,qtd:1,dias:1,payer:'eu',codSinapi:r.code});renderWizard();toast('Item adicionado — confira o preço no ícone 🔗 ao lado dele.');});
+  }
+  if(s===8){
+    $('#_finPreco').oninput=e=>{WZ.preco=+e.target.value||0;refreshStep8();};
+    $('#_finMargem').oninput=e=>{WZ.margemDes=+e.target.value||0;refreshStep8();};
+    $('#_finUsarSug').onclick=()=>{WZ.preco=Math.round(calc(WZ).sugerido*100)/100;$('#_finPreco').value=WZ.preco;refreshStep8();};
+  }
 }
 function wvalidate(s){
   if(s===1&&!WZ.nomeObra.trim()){toast('Dê um nome para a obra antes de continuar.');return false;}
@@ -538,7 +621,7 @@ function renderWizard(){
    ${WSTEP<8?`<button class="btn acc" id="_wnext">Próximo →</button>`:`<button class="btn acc" id="_wsave">Salvar orçamento</button>`}</div>`;
   const nb=$('#_wnext');if(nb)nb.onclick=()=>{if(!wvalidate(WSTEP))return;WSTEP++;renderWizard();window.scrollTo(0,0);};
   const bb=$('#_wback');if(bb)bb.onclick=()=>{WSTEP--;renderWizard();window.scrollTo(0,0);};
-  const ex=$('#_wexit');if(ex)ex.onclick=()=>go('home');
+  const ex=$('#_wexit');if(ex)ex.onclick=()=>{if(WZ.nomeObra&&WZ.nomeObra.trim()&&!confirm('Sair sem salvar este orçamento?'))return;go('home');};
   const sv=$('#_wsave');if(sv)sv.onclick=()=>saveOrcamento();
   renderTop();
 }
